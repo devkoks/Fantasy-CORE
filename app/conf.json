@@ -1,0 +1,17 @@
+{
+	"MySQL":{
+		"driver":"MySQLi",
+		"hostname":"localhost",
+		"username":"user",
+		"password":"pass",
+		"basename":"base"
+	},
+	"SMTP":{
+		"host":"localhost",
+		"port":25,
+		"user":"ex@example.com",
+		"pass":"password",
+		"from":"ex@example.com",
+		"from-name":"Name example"
+	}
+}
