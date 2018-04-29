@@ -6,7 +6,7 @@ class notfound
         "module"=>[],
         "functions"=>[]
     ];
-    
+
     public $view = "404";
-    public function init(){}
+    public function init($context){}
 }

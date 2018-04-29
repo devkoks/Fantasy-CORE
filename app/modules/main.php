@@ -7,9 +7,8 @@ class main
         "functions"=>["generateGUID"]
     ];
     public $view = "";
-    public function init()
+    public function init($context)
     {
-        global $template,$app;
-        $this->view = $template["home"];
+        $this->view = $context->core->tpl["home"];
     }
 }

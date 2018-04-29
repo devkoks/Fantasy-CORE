@@ -1,71 +1,98 @@
 <?php
-/*Версия ядра*/
-$core = array(
-	'version' => '1.6',
-	'pack' => 'conf,includes,tpl'
-);
-/*--Версия ядра--*/
-header("Koks-Core: ".$core['version']);
-include 'conf.php';//Подключаем конфиг
+class core
+{
+	const CORE_VERSION = 2.0;
 
-if(!isset($CoreConf)){
-	$FastSetting = $setting['fast-conf'];
-}else{
-	$FastSetting = $CoreConf;
-}
+	public $setting;
+	public $modules = array();
+	public $loadedModules = array();
+	public $loadedFunctions = array();
+	public $tpl;
 
-if($setting['errors']['display']){
-    ini_set('display_errors',"On");
-}else{
-    ini_set('display_errors',"Off");
-}
-error_reporting($setting['errors']['level']);
+	protected $appRequire;
 
-if($setting['DOCUMENT_ROOT']!=false)$_SERVER['DOCUMENT_ROOT'] = $setting['DOCUMENT_ROOT'];
+	public $application;
 
-if($setting['timezone']!=false)date_default_timezone_set($setting['timezone']);//Ставим стандартную временую зону
-
-include $_SERVER['DOCUMENT_ROOT'].'/core/includes.php';//Подключаем файл поключаемых файлов :D
-
-include $_SERVER['DOCUMENT_ROOT'].$setting['app'];//Запускаем приложение
-$app = new app();
-$appRequire = $app->getRequire();
-
-/*Подключаем модули/функции*/
-if($FastSetting['load-modules']){
-    $loadedModules = array();
-    foreach($appRequire['module'] as $moduleRequire){
-        include $_SERVER['DOCUMENT_ROOT']."/core/modules/".$moduleRequire.".class.php";
-        $loadedModules[] = $moduleRequire;
-    }
-    
-    $loadedFunctions = array();
-    foreach($appRequire['functions'] as $functionRequire){
-        include $_SERVER['DOCUMENT_ROOT']."/core/functions/".$functionRequire.".php";
-        $loadedFunctions[] = $functionRequire;
-    }
-}
-/*--Подключаем модули/функции--*/
-
-/*Константы*/
-if(isset($constant)){
-	foreach($constant as $name => $value){
-		define($name,$value);
+	public function __construct($FastSetting)
+	{
+		$this->setInfo($FastSetting);
+		$this->initApplication();
+		if($this->setting["load-modules"]){
+			$this->loadModules();
+		}
+		if($this->setting["load-tpl"]){
+			$this->loadTpl();
+		}
+		if($this->setting["start-app"]){
+			$this->application->init();
+		}
 	}
-	unset($constant);
-}
-/*--Константы--*/
 
-if($FastSetting['load-tpl'] and $app->isCoreModuleLoaded('tpl')){
-    $tpl = new core\module\tpl();//Создаём объект tpl
-    $template = array();
-    foreach($appRequire['tpl'] as $name){
-        $template[$name] = $tpl->open($_SERVER['DOCUMENT_ROOT'].$setting['template'],$name);
-    }
-    unset($name);
-}
+	private function setInfo($FastSetting)
+	{
+		header("Fantasy-Core: ".self::CORE_VERSION);
+		include "conf.php";//Подключаем конфиг
 
+		$this->setting = array_merge($setting,$FastSetting);
+		$this->setting['app-dir'] = $this->setting['app-dir'];
+		if($this->setting['errors']['display']){
+		    ini_set('display_errors',"On");
+		}else{
+		    ini_set('display_errors',"Off");
+		}
+		error_reporting($this->setting['errors']['level']);
+		if($this->setting['DOCUMENT_ROOT']!=false)$_SERVER['DOCUMENT_ROOT'] = $this->setting['DOCUMENT_ROOT'];
+		if($this->setting['timezone']!=false)date_default_timezone_set($this->setting['timezone']);//Ставим стандартную временую зону
+	}
 
-if($FastSetting['start-app']){
-    $app->init();
+	private function initApplication()
+	{
+		include $this->setting['DOCUMENT_ROOT'].$this->setting['app-dir'].$this->setting['app'];//Запускаем приложение
+		$this->application = new app($this);
+		$this->appRequire = $this->application->getRequire();
+	}
+
+	private function loadModules()
+	{
+	    $modRequires = array();
+		$this->appRequire["module"] = array_unique($this->appRequire["module"]);
+	    foreach($this->appRequire["module"] as $moduleRequire){
+	        include $this->setting["DOCUMENT_ROOT"]."/core/modules/".$moduleRequire.".class.php";
+	        $module = '\\core\\module\\'.$moduleRequire;
+	        foreach($module::require["module"] as $modRequire){
+	        	$this->loadedModules[] = $modRequire;
+	        }
+	        foreach($module::require["functions"] as $funcRequire){
+	        	$funcRequires[] = $funcRequire;
+	        }
+	        $this->loadedModules[] = $moduleRequire;
+	    }
+	    $this->loadedModules = array_unique($this->loadedModules);
+	    unset($module);
+	    foreach($this->appRequire["functions"] as $functionRequire){
+	        include $this->setting["DOCUMENT_ROOT"]."/core/functions/".$functionRequire.".php";
+	        $this->loadedFunctions[] = $functionRequire;
+	    }
+		$appConf = $this->application->getAppConf();
+		include $this->setting["DOCUMENT_ROOT"].$this->setting["app-dir"].'/app/init.php';
+	}
+
+	private function loadTpl()
+	{
+		//var_dump($this->modules);
+	    foreach($this->appRequire["tpl"] as $name){
+			$fp = explode("/",$name);
+			$dir = $this->setting["DOCUMENT_ROOT"].$this->setting["app-dir"].$this->setting["template"]."/";
+			if(count($fp)>1){
+				for($i=0;$i<count($fp)-1;$i++){
+					$dir .= $fp[$i]."/";
+				}
+				$nameFile = $fp[count($fp)-1];
+			}else{
+				$nameFile = $fp[0];
+			}
+	        $this->tpl[$name] = $this->modules["tpl"]->open($dir,$nameFile);
+	    }
+	}
+
 }

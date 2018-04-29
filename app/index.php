@@ -1,29 +1,40 @@
 <?php
-
 class app
 {
     private $module;
+    private $mod;
+    public $require = ["module"=>["files","tpl"]];
 
+    public $core;
+	public $coreConf;
+	public $appConf;
+
+    public function __construct($context)
+    {
+        $this->core = $context;
+        $URL = $this->getURL();
+        if($URL[1] == ""){
+            $URL[1] = 'main';
+        }
+       $this->setModule($URL[1]);
+    }
     public function init()
     {
-        global $tpl;
-        $coreConf = $this->getCoreConf();
-        $appConf = $this->getAppConf();
-        include $_SERVER['DOCUMENT_ROOT'].'/app/init.php';
-
-        $this->initAppModule();
-        $view = $this->module->view;
-        if($this->isCoreModuleLoaded('tpl')){
-            include 'tplEngine.php';
-        }
+        $this->coreConf = $this->getCoreConf();
+        $this->appConf = $this->getAppConf();
+        $module = $this->getModule();
+        $this->module = new $module();
+		$this->module->init($this);
+		$view = $this->module->view;
+		if($this->isCoreModuleLoaded('tpl')){
+			include 'tplEngine.php';
+		}
         print $view;
     }
 
-    public function isCoreModuleLoaded(string $module)
+    public function isCoreModuleLoaded(String $module)
     {
-        global $loadedModules;
-
-        foreach($loadedModules as $loadedModule){
+        foreach($this->core->loadedModules as $loadedModule){
             if($loadedModule == $module){
                 return true;
             }
@@ -31,72 +42,62 @@ class app
         return false;
     }
 
-    public function isCoreFunctionLoaded(string $function)
+    public function isCoreFunctionLoaded(String $function)
     {
-        global $loadedFunctions;
-        foreach($loadedFunctions as $loadedFunction){
+        foreach($this->core->loadedFunctions as $loadedFunction){
             if($loadedFunction = $function){
                 return true;
             }
         }
         return false;
     }
-
+    /* METHOD FOR CORE */
     public function getRequire()
     {
-        $module = $this->getModule();
         $this->includeAppModule();
+        $module = $this->getModule();
         $require = $module::require;
+        $require = array_merge_recursive($require,$this->require);
         return $require;
     }
-
-    protected function getAppConf()
+    /*--- METHOD FOR CORE ---*/
+    public function getAppConf()
     {
-        $data = core\module\files::read($_SERVER['DOCUMENT_ROOT'].'/app/conf.json');
+        $data = \core\module\files::read($this->core->setting['DOCUMENT_ROOT'].$this->core->setting['app-dir'].'/app/conf.json');
         $conf = json_decode($data,true);
         unset($data);
         return $conf;
     }
-    protected function getCoreConf()
+    public function getCoreConf()
     {
-        global $setting;
-        return $setting;
+        return $this->core->setting;
     }
-    protected function getURL()
+    public function getURL()
     {
         return explode('/',$_SERVER['REQUEST_URI']);
     }
     protected function getModule()
     {
-        $URL = $this->getURL();
-        if($URL[1] == ''){
-            $URL[1] = 'main';
-        }
-        return $URL[1];
+        return $this->mod;
     }
-    protected function getTemplate()
+    protected function setModule($mod)
     {
-        global $template;
-        return $template;
+        $this->mod = $mod;
+    }
+    public function getTemplate()
+    {
+        return $this->core->tpl;
     }
     private function includeAppModule()
     {
         if(!is_object($this->module)){
             $module = $this->getModule();
-
-            if(file_exists($_SERVER['DOCUMENT_ROOT'].'/app/modules/'.$module.'.php')){
-                include $_SERVER['DOCUMENT_ROOT'].'/app/modules/'.$module.'.php';
+            if(file_exists($this->core->setting['DOCUMENT_ROOT'].$this->core->setting['app-dir'].'/app/modules/'.$module.'.php')){
+                include $this->core->setting['DOCUMENT_ROOT'].$this->core->setting['app-dir'].'/app/modules/'.$module.'.php';
             }else{
-                include $_SERVER['DOCUMENT_ROOT'].'/app/modules/notfound.php';
-                exit();
+                $this->setModule("notfound");
+                include $this->core->setting['DOCUMENT_ROOT'].$this->core->setting['app-dir'].'/app/modules/notfound.php';
             }
-
         }
-    }
-    private function initAppModule()
-    {
-        $module = $this->getModule();
-        $this->module = new $module();
-        $this->module->init();
     }
 }
