@@ -7,7 +7,16 @@ $setting = array(
 		'dir' => '/logs/',
 		'prefix' => 'log_'
 	),
-	'template' => '/tpl/default',
+	'upload' => array(
+		'dir'=> '/httpdocs/uploads',
+		'url'=>'/uploads',
+		'access-files' => array(
+			'image/jpeg',
+			'image/png',
+			'image/gif'
+		)
+	),
+	'template' => '/tpl',
     'debug-view' => true,
 	'cache' => true,
 	'app' => '/app/index.php',
@@ -17,7 +26,8 @@ $setting = array(
     ),
 	'fast-conf' => array(
 		'start-app' => false,
-		'load-tpl' => true,
-		'load-modules' => true
+		'load-tpl' => false,
+		'load-modules' => true,
+		'app-dir'=> '/httpdocs'
 	)
 );

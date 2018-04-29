@@ -1,7 +1,11 @@
 <?php
 namespace core\module;
-class SMTPmail
+class mail
 {
+	const require = [
+        'module'=>[],
+        'functions'=>['SetLog']
+    ];
 	private $host;
 	private $port;
 	private $user;
@@ -18,70 +22,88 @@ class SMTPmail
 		$this->from_name = $from_name;
 	}
 	
-	public function send($to,$subject,$message)
+	public function send($to,$subject,$message,$ContentType,$filename,$filedata)
 	{
 		$this->from_name = base64_encode($this->from_name);
-		$subject = base64_encode($subject);
 		$message = base64_encode($message);
-		$message = "Content-Type: text/html; charset=\"utf-8\"\r\nContent-Transfer-Encoding: base64\r\nUser-Agent: Koks SMTP Mail\r\nMIME-Version: 1.0\r\n\r\n".$message;
-		$subject="=?utf-8?B?{$subject}?=";
-		$this->from_name="=?utf-8?B?{$this->from_name}?=";
-		$error = array();   
-		$socket = socket_create(AF_INET, SOCK_STREAM, SOL_TCP);
-		if ($socket < 0) {
-			$error[] = 'socket_create() failed: '.socket_strerror(socket_last_error())."\n";
+		$headers = '';
+
+		$headers .= 'MIME-Version: 1.0'.PHP_EOL;
+		$headers .= 'Content-Type: multipart/mixed; charset="utf-8"; boundary="8on.ru-massager"'.PHP_EOL;  
+		$headers .= 'Subject: '.$subject.''.PHP_EOL;
+		$headers .= 'Date: '.date('r').''.PHP_EOL;
+		$headers .= 'To: '.$to.PHP_EOL;
+
+		$headers .= '--8on.ru-massager'.PHP_EOL;
+		$headers .= 'Content-Type: '.$ContentType.'; charset="utf-8"'.PHP_EOL;
+		$headers .= 'Content-Transfer-Encoding: base64'.PHP_EOL;
+		$headers .= 'User-Agent: Koks SMTP Mail'.PHP_EOL;
+		$headers .= PHP_EOL;
+		$headers .= chunk_split($message).''.PHP_EOL;
+
+		if($filedata != null and $filename != null){
+			$headers .= '--8on.ru-massager'.PHP_EOL;
+			$headers .= 'Content-Type: application/octet-stream; name="'.$filename.'"'.PHP_EOL;
+			$headers .= 'Content-Transfer-Encoding: base64'.PHP_EOL;
+			$headers .= 'Content-Disposition: attachment; filename="'.$filename.'"'.PHP_EOL;
+			$headers .= PHP_EOL;
+			$headers .= chunk_split(base64_encode($filedata)).''.PHP_EOL;
 		}
 
-		$result = socket_connect($socket, $this->host, $this->port);
-		if ($result === false) {
-		   $error[] = 'socket_connect() failed: '.socket_strerror(socket_last_error())."\n";
-		} 
+		$headers .= '--8on.ru-massager--'.PHP_EOL;
+		$message = $headers;
+
+
+
+		$subject="=?utf-8?B?{$subject}?=";
+		$from_name="=?utf-8?B?{$this->from_name}?=";
+		$error = array();   
+		$socket = fsockopen($this->host, $this->port, $errno, $errstr, 30);
+
 		if(count($error) == 0){
-			$message = "FROM:{$this->from_name}<{$this->from}>\r\n".$message;
-			$message = "To: $to\r\n".$message;
-			$message = "Subject: $subject\r\n".$message;
-			$utc = date('r');
-			$message = "Date: {$utc}\r\n".$message;
-			$cmd = array();
-			$cmd[] = 'EHLO '.$this->user;
-			$cmd[] = 'AUTH LOGIN';
-			$cmd[] = base64_encode($this->user);
-			$cmd[] = base64_encode($this->pass);
-			$cmd[] = "MAIL FROM:<{$this->from}>";
-			$cmd[] = "RCPT TO:<{$to}>";
-			$cmd[] = 'DATA';
-			$cmd[] = $message."\r\n.";
-			$cmd[] = 'QUIT';
-			$this->read($socket);
-			foreach($cmd as $ex){
-				$this->write($socket,$ex);
-				$this->read($socket);
-			}
+			$this->smtp_read($socket);
+			$this->smtp_write($socket,'EHLO 8on.ru');
+			$this->smtp_read($socket);
+			$this->smtp_write($socket,'AUTH LOGIN');
+			$this->smtp_read($socket);
+			$this->smtp_write($socket,base64_encode($this->user));
+			$this->smtp_read($socket);
+			$this->smtp_write($socket,base64_encode($this->pass));
+			$this->smtp_read($socket);
+			$this->smtp_write($socket,"MAIL FROM:<{$this->from}>");
+			$this->smtp_read($socket);
+			$this->smtp_write($socket,"RCPT TO:<{$to}>");
+			$this->smtp_read($socket);
+			$this->smtp_write($socket,'DATA');
+			$this->smtp_read($socket);
+			$this->smtp_write($socket, $message."\r\n.");
+			$this->smtp_read($socket);
+			$this->smtp_write($socket, 'QUIT');
+			$this->smtp_read($socket);
 			return true;
 		}else{
 			foreach($error as $text){
-				print $text;
+				 $errors .= $text;
 			}
-			return false;
+			return $errors;
 		}
 		if(isset($socket)){
 			socket_close($socket);
 		}
 	}
-	private function read($socket)
-	{
-		$read = socket_read($socket, 1024);
+	private function smtp_read($socket){
+		$read = fgets($socket, 1024);
 		if($read{0} != '2' && $read{0} != '3'){
 			if(!empty($read)){
+				var_dump('SMTP failed: '.$read."\n");
 				return 'SMTP failed: '.$read."\n";
 			}else{
 				return 'Unknown error'."\n";
 			}
 		}
 	}
-	private function write($socket,$msg)
-	{
+	private function smtp_write($socket,$msg) {
 		$msg = $msg."\r\n";
-		socket_write($socket, $msg, strlen($msg));
+		fputs($socket, $msg);
 	}
 }

@@ -1,11 +1,11 @@
 <?php
-/*---------------------------------*\
-|Парсер для работы с дизайном сайта.|
-|-----------------------------------|
-|Разработано на сайте koks.pw       |
-\*---------------------------------*/
 namespace core\module;
-class tpl{
+class tpl
+{
+	const require = [
+        'module'=>[],
+        'functions'=>[]
+    ];
 	public function open($dir,$file)
 	{
 		$file = $dir.'/'.$file.'.tpl';
@@ -21,12 +21,12 @@ class tpl{
 		}else{
 			$data = '';
 		}
-		
+
 		return $data;
 	}
 	public function select($trs,$template,$unsettag=0)
 	{
-		
+
 		if(preg_match_all("/(\[".$trs."\](.*?)\[\/".$trs."\])/s", $template,$arr)){
 			if(count($arr[0]) > 1){
 				if($unsettag == 1){
@@ -72,12 +72,17 @@ class tpl{
 	}
 	public function array2tpl($tag,$array,$template)
 	{
-		if(preg_match_all("/\{".$tag.":(.*?)\}/s", $template,$arr)){
+        if($tag==null){
+            $prefix = "";
+        }else{
+			$prefix = $tag.":";
+		}
+		if(preg_match_all("/\{".$prefix."(.*?)\}/s", $template,$arr)){
 			foreach($arr[0] as $value){
-				$value = str_replace('{'.$tag.':','',$value);
+                $value = str_replace('{'.$prefix,'',$value);
 				$value = str_replace('}','',$value);
 				if(isset($array[$value])){
-					$template = str_replace('{'.$tag.':'.$value.'}',$array[$value],$template);
+                    $template = str_replace('{'.$prefix.$value.'}',$array[$value],$template);
 				}
 			}
 		}
@@ -100,11 +105,27 @@ class tpl{
 			foreach($arr[0] as $value){
 				$value = str_replace('{'.$tagName.':','',$value);
 				$value = str_replace('}','',$value);
-				$included = $this->open($dir.'/'.$incDir,$value);
+				$included = $this->open($dir.$incDir,$value);
 				$template = str_replace('{'.$tagName.':'.$value.'}',$included,$template);
 			}
+
 		}
 		return $template;
+	}
+	public function arrayCompile($array,$tag,$template)
+	{
+		$i=0;
+		$implode = array();
+        foreach($array as $arr){
+       		$implode[$i] = $this->select($tag,$template,true);
+        	if(is_array($implode[$i])) $implode[$i] = $implode[$i][0];
+            foreach($arr as $key => $value){
+		    	$implode[$i] = str_replace('{'.$key.'}',$value,$implode[$i]);
+        	}
+        	$i++;
+
+        }
+		return str_replace($this->select($tag,$template,false),implode($implode),$template);
 	}
 	public function comments($open,$close,$tpl)
 	{
@@ -112,8 +133,8 @@ class tpl{
 		$close 	= preg_quote($close);
 		$open 	= str_replace('/','\/',$open);
 		$close 	= str_replace('/','\/',$close);
-		$tpl 	= preg_replace("/(".$open."(.*?)".$close.")/us","",$tpl);
-		
+		$tpl 	= preg_replace("/(".$open."(.*?)".$close.")/s","",$tpl);
+
 		return $tpl;
 	}
 }
