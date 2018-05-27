@@ -13,7 +13,7 @@ class app
     {
         $this->core = $context;
         $URL = $this->getURL();
-        if($URL[1] == ""){
+        if(isset($URL[1]) and $URL[1] == ""){
             $URL[1] = 'main';
         }
        $this->setModule($URL[1]);
