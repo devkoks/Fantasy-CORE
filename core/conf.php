@@ -8,7 +8,7 @@ $setting = array(
 		'prefix' => 'log_'
 	),
 	'upload' => array(
-		'dir'=> '/httpdocs/uploads',
+		'dir'=> '/./uploads',
 		'url'=>'/uploads',
 		'access-files' => array(
 			'image/jpeg',
@@ -28,6 +28,6 @@ $setting = array(
 		'start-app' => false,
 		'load-tpl' => false,
 		'load-modules' => true,
-		'app-dir'=> '/httpdocs'
+		'app-dir'=> '/./'
 	)
 );
