@@ -17,15 +17,14 @@ class core
 	{
 		$this->setInfo($FastSetting);
 		$this->initApplication();
-		if($this->setting["load-modules"]){
+		if($this->setting["load-modules"])
 			$this->loadModules();
-		}
-		if($this->setting["load-tpl"]){
+
+		if($this->setting["load-tpl"])
 			$this->loadTpl();
-		}
-		if($this->setting["start-app"]){
+
+		if($this->setting["start-app"])
 			$this->application->init();
-		}
 	}
 
 	private function setInfo($FastSetting)
@@ -33,8 +32,8 @@ class core
 		header("Fantasy-Core: ".self::CORE_VERSION);
 		include "conf.php";//Подключаем конфиг
 
+		$setting = array_merge($setting,$setting["fast-conf"]);
 		$this->setting = array_merge($setting,$FastSetting);
-		$this->setting['app-dir'] = $this->setting['app-dir'];
 		if($this->setting['errors']['display']){
 		    ini_set('display_errors',"On");
 		}else{
@@ -79,7 +78,6 @@ class core
 
 	private function loadTpl()
 	{
-		//var_dump($this->modules);
 	    foreach($this->appRequire["tpl"] as $name){
 			$fp = explode("/",$name);
 			$dir = $this->setting["DOCUMENT_ROOT"].$this->setting["app-dir"].$this->setting["template"]."/";
