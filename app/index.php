@@ -75,8 +75,8 @@ class app
     public function getURL()
     {
         if(!isset($_SERVER['REQUEST_URI']))
-            $_SERVER['REQUEST_URI'] = array();
-        
+            $_SERVER['REQUEST_URI'] = "";
+
         return explode('/',$_SERVER['REQUEST_URI']);
     }
     protected function getModule()
