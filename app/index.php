@@ -18,6 +18,26 @@ class app
         if($URL[1] == ""){
             $URL[1] = 'main';
         }
+        /*
+         *TODO: fix!
+         */
+        $dmodule = $this->core->setting['DOCUMENT_ROOT'].$this->core->setting['app-dir']."/app/modules";
+        $fmodule = "";
+        $module  = "";
+        unset($URL[0]);
+        foreach($URL as $urls){
+            $fmodule .= "/".$urls;
+            if(file_exists($dmodule.$fmodule) or file_exists($dmodule.$fmodule.".php")){
+                if(is_dir($dmodule.$fmodule)){
+                    $module .= "/".$urls;
+                }else{
+                    $module .= ".php";
+                }
+            }
+        }
+        if(file_exists($dmodule.$fmodule.".php")){
+            $fmodule .= ".php";
+        }
        $this->setModule($URL[1]);
     }
     public function init()
@@ -25,6 +45,7 @@ class app
         $this->coreConf = $this->getCoreConf();
         $this->appConf = $this->getAppConf();
         $module = $this->getModule();
+        $module = "app\\module\\".$module;
         $this->module = new $module();
 		$this->module->init($this);
 		$view = $this->module->view;
@@ -58,6 +79,7 @@ class app
     {
         $this->includeAppModule();
         $module = $this->getModule();
+        $module = "app\\module\\".$module;
         $require = $module::require;
         $require = array_merge_recursive($require,$this->require);
         return $require;

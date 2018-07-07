@@ -1,5 +1,5 @@
 <?php
-namespace \app\module;
+namespace app\module;
 class notfound
 {
     const require = [
