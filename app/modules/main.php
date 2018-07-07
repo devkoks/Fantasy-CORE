@@ -1,4 +1,5 @@
 <?php
+namespace \app\module;
 class main
 {
     const require = [
