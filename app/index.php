@@ -13,14 +13,9 @@ class app
     {
         $this->core = $context;
         $URL = $this->getURL();
-        if(!isset($URL[1]))
-            $URL[1] = "";
-        if($URL[1] == ""){
-            $URL[1] = 'main';
-        }
-        /*
-         *TODO: fix!
-         */
+        if(!isset($URL[1])) $URL[1] = "";
+        if($URL[1] == "") $URL[1] = 'main';
+
         $dmodule = $this->core->setting['DOCUMENT_ROOT'].$this->core->setting['app-dir']."/app/modules";
         $fmodule = "";
         $module  = "";
@@ -36,22 +31,29 @@ class app
             }
         }
         if(file_exists($dmodule.$fmodule.".php")){
-            $fmodule .= ".php";
+            $module = $fmodule;
+        }else{
+            $module = dirname($fmodule);
         }
-       $this->setModule($URL[1]);
+        $this->setModule($module);
     }
     public function init()
     {
         $this->coreConf = $this->getCoreConf();
         $this->appConf = $this->getAppConf();
-        $module = $this->getModule();
-        $module = "app\\module\\".$module;
+        $moduleName = $this->getModule();
+        $module = "";
+        foreach(explode("/",$moduleName) as $m){
+            if($m=="")continue;
+            $module .= "\\".$m;
+        }
+        $module = "app\\module".$module;
         $this->module = new $module();
 		$this->module->init($this);
 		$view = $this->module->view;
-		if($this->isCoreModuleLoaded('tpl')){
-			include 'tplEngine.php';
-		}
+    	/*if($this->isCoreModuleLoaded('tpl')){
+            include 'tplEngine.php';
+        }*/
         print $view;
     }
 
@@ -78,8 +80,13 @@ class app
     public function getRequire()
     {
         $this->includeAppModule();
-        $module = $this->getModule();
-        $module = "app\\module\\".$module;
+        $moduleName = $this->getModule();
+        $module = "";
+        foreach(explode("/",$moduleName) as $m){
+            if($m=="")continue;
+            $module .= "\\".$m;
+        }
+        $module = "app\\module".$module;
         $require = $module::require;
         $require = array_merge_recursive($require,$this->require);
         return $require;
