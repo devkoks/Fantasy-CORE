@@ -2,7 +2,7 @@
 namespace core\module;
 class tpl
 {
-	const require = [
+	public static $requires = [
         'module'=>[],
         'functions'=>[]
     ];
@@ -17,6 +17,7 @@ class tpl
 			}else{
 				$data = '';
 			}
+
 			$data = $this->includeTpl($dir,'include','include',$data);
 		}else{
 			$data = '';
@@ -77,15 +78,10 @@ class tpl
         }else{
 			$prefix = $tag.":";
 		}
-		if(preg_match_all("/\{".$prefix."(.*?)\}/s", $template,$arr)){
-			foreach($arr[0] as $value){
-                $value = str_replace('{'.$prefix,'',$value);
-				$value = str_replace('}','',$value);
-				if(isset($array[$value])){
-                    $template = str_replace('{'.$prefix.$value.'}',$array[$value],$template);
-				}
-			}
-		}
+		foreach($array as $key => $value)
+			if(!is_array($value))
+				$template = str_replace('{'.$prefix.$key.'}',$value,$template);
+
 		return $template;
 	}
 	public function hidden($tag,$template)
@@ -119,13 +115,30 @@ class tpl
         foreach($array as $arr){
        		$implode[$i] = $this->select($tag,$template,true);
         	if(is_array($implode[$i])) $implode[$i] = $implode[$i][0];
-            foreach($arr as $key => $value){
-		    	$implode[$i] = str_replace('{'.$key.'}',$value,$implode[$i]);
-        	}
+            foreach($arr as $key => $value)
+				if(!is_array($value))
+		    		$implode[$i] = str_replace('{'.$key.'}',$value,$implode[$i]);
+
         	$i++;
 
         }
 		return str_replace($this->select($tag,$template,false),implode($implode),$template);
+	}
+	public function vars($prefix,&$view)
+	{
+		$vars = [];
+		preg_match_all("/(\\[\/\*".$prefix."\:(.*?)\*\/\\])/s", $view,$arr);
+		foreach($arr[2] as $key => $value){
+			$var = explode("=",$value);
+			if(count($var)>1){
+				$name = $var[0];
+				unset($var[0]);
+				$vars[$name] = implode("=",$var);
+				$view = str_replace($arr[0][$key],'',$view);
+			}
+		}
+		$view = $this->array2tpl($prefix,$vars,$view);
+		$view = preg_replace("/\{".$prefix."\:.*?\}/s","",$view);
 	}
 	public function comments($open,$close,$tpl)
 	{
