@@ -1,12 +1,13 @@
 <?php
 class core
 {
-	const CORE_VERSION = 2.0;
+	const CORE_VERSION = 2.1;
+
+	const ERROR_MOD_NOT_LOADED = 1001;
 
 	public $setting;
 	public $modules = array();
-	public $loadedModules = array();
-	public $loadedFunctions = array();
+	public $functions = array();
 	public $tpl;
 
 	protected $appRequire;
@@ -25,6 +26,31 @@ class core
 
 		if($this->setting["start-app"])
 			$this->application->init();
+	}
+
+	public function loadModule($name)
+	{
+		if(isset($this->modules[$name])) return true;
+		include $this->setting["DOCUMENT_ROOT"]."/core/modules/".$name.".class.php";
+		$module = '\\core\\module\\'.$moduleRequire;
+		foreach($module::$requires["module"] as $modRequire)
+			$this->loadModule($modRequire);
+		foreach($module::$requires["functions"] as $functionRequire)
+			$this->loadFunction($functionRequire);
+	}
+
+	public function getModule($name)
+	{
+		if(!isset($this->modules[$name]))
+			throw new \Exception("Error: module not loaded", self::ERROR_MOD_NOT_LOADED);
+		return $this->modules[$name];
+	}
+
+	public function loadFunction($name)
+	{
+		if(function_exists($name)) return true;
+		include $this->setting["DOCUMENT_ROOT"]."/core/functions/".$name.".php";
+		$this->functions[$name] = true;
 	}
 
 	private function setInfo($FastSetting)
@@ -46,34 +72,19 @@ class core
 
 	private function initApplication()
 	{
-		include $this->setting['DOCUMENT_ROOT'].$this->setting['app-dir'].$this->setting['app'];//Запускаем приложение
-		$this->application = new app($this);
+		include $this->setting['DOCUMENT_ROOT'].$this->setting['app']['dir'].$this->setting['app']['path'];//Запускаем приложение
+		$this->application = new $this->setting['app']['name']($this);
 		$this->appRequire = $this->application->getRequire();
 	}
 
 	private function loadModules()
 	{
-	    $modRequires = array();
-		$this->appRequire["module"] = array_unique($this->appRequire["module"]);
-	    foreach($this->appRequire["module"] as $moduleRequire){
-	        include $this->setting["DOCUMENT_ROOT"]."/core/modules/".$moduleRequire.".class.php";
-	        $module = '\\core\\module\\'.$moduleRequire;
-	        foreach($module::require["module"] as $modRequire){
-	        	$this->loadedModules[] = $modRequire;
-	        }
-	        foreach($module::require["functions"] as $funcRequire){
-	        	$funcRequires[] = $funcRequire;
-	        }
-	        $this->loadedModules[] = $moduleRequire;
-	    }
-	    $this->loadedModules = array_unique($this->loadedModules);
-	    unset($module);
-	    foreach($this->appRequire["functions"] as $functionRequire){
-	        include $this->setting["DOCUMENT_ROOT"]."/core/functions/".$functionRequire.".php";
-	        $this->loadedFunctions[] = $functionRequire;
-	    }
+	    foreach($this->appRequire["module"] as $moduleRequire)
+			$this->loadModule($moduleRequire);
+	    foreach($this->appRequire["functions"] as $functionRequire)
+	        $this->loadFunction($functionRequire);
 		$appConf = $this->application->getAppConf();
-		include $this->setting["DOCUMENT_ROOT"].$this->setting["app-dir"].'/app/init.php';
+		include $this->setting["DOCUMENT_ROOT"].$this->setting['app']['dir'].dirname($this->setting['app']['path']).'/init.php';
 	}
 
 	private function loadTpl()

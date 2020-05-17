@@ -28,6 +28,10 @@ $setting = array(
 		'start-app' => false,
 		'load-tpl' => false,
 		'load-modules' => true,
-		'app-dir'=> '/./'
+		'app'=>[
+			'dir'=>'/apps',
+			'name'=>'app',
+			'path'=>'/app/index.php'
+		]
 	)
 );
