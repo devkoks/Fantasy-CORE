@@ -2,7 +2,7 @@
 namespace core\module;
 class app
 {
-    const require = [
+    public static $requires = [
 
         'module'=>['MySQL','tpl'],
         'functions'=>[]

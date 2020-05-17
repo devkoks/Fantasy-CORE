@@ -1,8 +1,8 @@
 <?php
-namespace \app\module\subLevel2;
-class subLevel3
+namespace app\module;
+class main
 {
-    const require = [
+    public static $requires = [
         "tpl"=>["home"],
         "module"=>["tpl"],
         "functions"=>["generateGUID"]

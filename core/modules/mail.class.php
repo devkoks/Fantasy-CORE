@@ -2,7 +2,7 @@
 namespace core\module;
 class mail
 {
-	const require = [
+	public static $requires = [
         'module'=>[],
         'functions'=>['SetLog']
     ];
@@ -21,7 +21,7 @@ class mail
 		$this->from = $from;
 		$this->from_name = $from_name;
 	}
-	
+
 	public function send($to,$subject,$message,$ContentType,$filename,$filedata)
 	{
 		$this->from_name = base64_encode($this->from_name);
@@ -29,7 +29,7 @@ class mail
 		$headers = '';
 
 		$headers .= 'MIME-Version: 1.0'.PHP_EOL;
-		$headers .= 'Content-Type: multipart/mixed; charset="utf-8"; boundary="8on.ru-massager"'.PHP_EOL;  
+		$headers .= 'Content-Type: multipart/mixed; charset="utf-8"; boundary="8on.ru-massager"'.PHP_EOL;
 		$headers .= 'Subject: '.$subject.''.PHP_EOL;
 		$headers .= 'Date: '.date('r').''.PHP_EOL;
 		$headers .= 'To: '.$to.PHP_EOL;
@@ -57,7 +57,7 @@ class mail
 
 		$subject="=?utf-8?B?{$subject}?=";
 		$from_name="=?utf-8?B?{$this->from_name}?=";
-		$error = array();   
+		$error = array();
 		$socket = fsockopen($this->host, $this->port, $errno, $errstr, 30);
 
 		if(count($error) == 0){

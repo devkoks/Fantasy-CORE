@@ -3,7 +3,7 @@ class app
 {
     private $module;
     private $mod;
-    public $require = ["module"=>["files","tpl"]];
+    public $require = ["module"=>["files","tpl",'users','http']];
 
     public $core;
 	public $coreConf;
@@ -15,27 +15,23 @@ class app
         $URL = $this->getURL();
         if(!isset($URL[1])) $URL[1] = "";
         if($URL[1] == "") $URL[1] = 'main';
-
-        $dmodule = $this->core->setting['DOCUMENT_ROOT'].$this->core->setting['app-dir']."/app/modules";
-        $fmodule = "";
-        $module  = "";
-        unset($URL[0]);
-        foreach($URL as $urls){
-            $fmodule .= "/".$urls;
-            if(file_exists($dmodule.$fmodule) or file_exists($dmodule.$fmodule.".php")){
-                if(is_dir($dmodule.$fmodule)){
-                    $module .= "/".$urls;
-                }else{
-                    $module .= ".php";
-                }
-            }
-        }
-        if(file_exists($dmodule.$fmodule.".php")){
-            $module = $fmodule;
-        }else{
-            $module = dirname($fmodule);
-        }
+		$module = $this->detectModule($URL);
         $this->setModule($module);
+    }
+	private function detectModule($URL)
+    {
+
+        $dmodule = $this->core->setting['DOCUMENT_ROOT'].$this->core->setting['app']['dir']."/app/modules/";
+        if(count($URL) == 0) return "notfound";
+        $dir = implode("/",$URL);
+        if(!file_exists($dmodule.$dir.".php")){
+            array_pop($URL);
+            return $this->detectModule($URL);
+        }
+        if(file_exists($dmodule.$dir.".php")){
+            $module = $dir;
+        }
+        return $module;
     }
     public function init()
     {
@@ -51,9 +47,7 @@ class app
         $this->module = new $module();
 		$this->module->init($this);
 		$view = $this->module->view;
-    	/*if($this->isCoreModuleLoaded('tpl')){
-            include 'tplEngine.php';
-        }*/
+        if($this->isCoreModuleLoaded('tpl')) include 'tplEngine.php';
         print $view;
     }
 
@@ -94,7 +88,7 @@ class app
     /*--- METHOD FOR CORE ---*/
     public function getAppConf()
     {
-        $data = \core\module\files::read($this->core->setting['DOCUMENT_ROOT'].$this->core->setting['app-dir'].'/app/conf.json');
+        $data = \core\module\files::read($this->core->setting['DOCUMENT_ROOT'].$this->core->setting['app']['dir'].'/app/conf.json');
         $conf = json_decode($data,true);
         unset($data);
         return $conf;
@@ -126,11 +120,11 @@ class app
     {
         if(!is_object($this->module)){
             $module = $this->getModule();
-            if(file_exists($this->core->setting['DOCUMENT_ROOT'].$this->core->setting['app-dir'].'/app/modules/'.$module.'.php')){
-                include $this->core->setting['DOCUMENT_ROOT'].$this->core->setting['app-dir'].'/app/modules/'.$module.'.php';
+            if(file_exists($this->core->setting['DOCUMENT_ROOT'].$this->core->setting['app']['dir'].'/app/modules/'.$module.'.php')){
+                include $this->core->setting['DOCUMENT_ROOT'].$this->core->setting['app']['dir'].'/app/modules/'.$module.'.php';
             }else{
                 $this->setModule("notfound");
-                include $this->core->setting['DOCUMENT_ROOT'].$this->core->setting['app-dir'].'/app/modules/notfound.php';
+                include $this->core->setting['DOCUMENT_ROOT'].$this->core->setting['app']['dir'].'/app/modules/notfound.php';
             }
         }
     }

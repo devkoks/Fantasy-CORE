@@ -2,7 +2,7 @@
 namespace core\module;
 class files
 {
-	const require = [
+	public static $requires = [
         'module'=>[],
         'functions'=>[]
     ];

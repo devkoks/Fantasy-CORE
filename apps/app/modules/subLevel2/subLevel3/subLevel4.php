@@ -2,7 +2,7 @@
 namespace \app\module\subLevel2\subLevel3;
 class subLevel4
 {
-    const require = [
+    public static $requires = [
         "tpl"=>["home"],
         "module"=>["tpl"],
         "functions"=>["generateGUID"]

@@ -2,7 +2,7 @@
 namespace core\module;
 class http
 {
-	const require = [
+	public static $requires = [
         'module'=>[],
         'functions'=>[]
     ];

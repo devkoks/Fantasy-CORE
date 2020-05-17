@@ -2,7 +2,7 @@
 namespace app\module;
 class notfound
 {
-    const require = [
+    public static $requires = [
         "tpl"=>[],
         "module"=>[],
         "functions"=>[]

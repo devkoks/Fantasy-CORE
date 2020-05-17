@@ -2,7 +2,7 @@
 namespace core\module;
 class MySQL
 {
-	const require = [
+	public static $requires = [
         'module'=>[],
         'functions'=>[]
     ];
