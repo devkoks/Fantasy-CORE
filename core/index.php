@@ -32,7 +32,7 @@ class core
 	{
 		if(isset($this->modules[$name])) return true;
 		include $this->setting["DOCUMENT_ROOT"]."/core/modules/".$name.".class.php";
-		$module = '\\core\\module\\'.$moduleRequire;
+		$module = '\\core\\module\\'.$name;
 		foreach($module::$requires["module"] as $modRequire)
 			$this->loadModule($modRequire);
 		foreach($module::$requires["functions"] as $functionRequire)
